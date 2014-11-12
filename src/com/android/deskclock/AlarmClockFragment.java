@@ -26,6 +26,7 @@ import android.app.Fragment;
 import android.app.FragmentTransaction;
 import android.app.LoaderManager;
 import android.content.ContentResolver;
+import android.content.ContentUris;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -46,11 +47,15 @@ import android.os.Bundle;
 import android.os.Vibrator;
 import android.preference.PreferenceManager;
 import android.support.v4.view.ViewCompat;
+import android.provider.DocumentsContract;
+import android.provider.MediaStore;
 import android.transition.AutoTransition;
 import android.transition.Fade;
 import android.transition.Transition;
 import android.transition.TransitionManager;
 import android.transition.TransitionSet;
+import android.provider.DocumentsContract;
+import android.provider.MediaStore;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -78,6 +83,7 @@ import com.android.deskclock.provider.DaysOfWeek;
 import com.android.deskclock.widget.ActionableToastBar;
 import com.android.deskclock.widget.TextTime;
 
+import java.io.File;
 import java.util.Calendar;
 import java.util.HashSet;
 
@@ -107,6 +113,10 @@ public abstract class AlarmClockFragment extends DeskClockFragment implements
     private static final String KEY_SELECTED_ALARM = "selectedAlarm";
     private static final String KEY_SELECT_SOURCE = "selectedSource";
 
+    private static final String DOWNLOAD_CONTENT = "content://downloads/public_downloads";
+    private static final String COLON = ":";
+    private static final int ID_INDEX = 1;
+
     private static final int REQUEST_CODE_RINGTONE = 1;
     private static final int REQUEST_CODE_PERMISSIONS = 2;
     private static final int REQUEST_CODE_EXTERN_AUDIO = 3;
@@ -129,6 +139,8 @@ public abstract class AlarmClockFragment extends DeskClockFragment implements
     private AlarmItemAdapter mAdapter;
     private View mEmptyView;
     private View mFooterView;
+
+    private String mDisplayName;
 
     private Bundle mRingtoneTitleCache; // Key: ringtone uri, value: ringtone title
     private ActionableToastBar mUndoBar;
@@ -532,6 +544,7 @@ public abstract class AlarmClockFragment extends DeskClockFragment implements
         if (uri == null) {
             uri = Alarm.NO_RINGTONE_URI;
         }
+
         return uri;
     }
 
@@ -798,6 +811,20 @@ public abstract class AlarmClockFragment extends DeskClockFragment implements
             if (tag == null) {
                 // The view was converted but somehow lost its tag.
                 tag = setNewHolder(view);
+            }
+            if (!Utils.isRingToneUriValid(mContext, alarm.alert)) {
+                alarm.alert = RingtoneManager.getActualDefaultRingtoneUri(context,
+                        RingtoneManager.TYPE_ALARM);
+
+                if (!Utils.isRingToneUriValid(mContext, alarm.alert)) {
+                    Uri uri = Utils.getSystemDefaultAlarm(mContext);
+                    alarm.alert = uri;
+
+                    RingtoneManager.setActualDefaultRingtoneUri(
+                            getActivity(), RingtoneManager.TYPE_ALARM, uri);
+                }
+
+                asyncUpdateAlarm(alarm, false);
             }
             final ItemHolder itemHolder = (ItemHolder) tag;
             itemHolder.alarm = alarm;
@@ -1112,7 +1139,7 @@ public abstract class AlarmClockFragment extends DeskClockFragment implements
             if (Alarm.NO_RINGTONE_URI.equals(alarm.alert)) {
                 ringtone = mContext.getResources().getString(R.string.silent_alarm_summary);
             } else {
-                ringtone = getRingToneTitle(alarm.alert);
+                ringtone = getRingToneTitle(alarm);
             }
             itemHolder.ringtone.setText(ringtone);
             itemHolder.ringtone.setContentDescription(
@@ -1163,10 +1190,11 @@ public abstract class AlarmClockFragment extends DeskClockFragment implements
         /**
          * Does a read-through cache for ringtone titles.
          *
-         * @param uri The uri of the ringtone.
+         * @param Alarm The alarm to get the ringtone title from.
          * @return The ringtone title. {@literal null} if no matching ringtone found.
          */
-        private String getRingToneTitle(Uri uri) {
+        private String getRingToneTitle(Alarm alarm) {
+            Uri uri = alarm.alert;
             // Try the cache first
             String title = mRingtoneTitleCache.getString(uri.toString());
             if (title == null) {
@@ -1175,17 +1203,65 @@ public abstract class AlarmClockFragment extends DeskClockFragment implements
                 if (!AlarmUtils.hasPermissionToDisplayRingtoneTitle(mContext, uri)) {
                     title = getString(R.string.custom_ringtone);
                 } else {
-                    // This is slow because a media player is created during Ringtone object creation.
-                    final Ringtone ringTone = RingtoneManager.getRingtone(mContext, uri);
-                    if (ringTone == null) {
-                        LogUtils.i("No ringtone for uri %s", uri.toString());
-                        return null;
+                    if (Utils.isRingToneUriValid(mContext, uri)) {
+                        if (uri.getAuthority().equals(Utils.DOC_AUTHORITY)
+                            || uri.getAuthority().equals(Utils.DOC_DOWNLOAD)
+                            || uri.getAuthority().equals(Utils.DOC_EXTERNAL)) {
+                            title = getDisplayNameFromDatabase(mContext,uri);
+                        } else {
+                            // This is slow because a media player is created during Ringtone object creation.
+                            final Ringtone ringTone = RingtoneManager.getRingtone(mContext, uri);
+                            if (ringTone == null) {
+                                LogUtils.i("No ringtone for uri %s", uri.toString());
+                                return null;
+                            }
+                            title = ringTone.getTitle(mContext);
+                        }
                     }
-                    title = ringTone.getTitle(mContext);
                 }
 
                 if (title != null) {
                     mRingtoneTitleCache.putString(uri.toString(), title);
+                }
+            }
+            return title;
+        }
+
+        private String getDisplayNameFromDatabase(Context context,Uri uri) {
+            String selection = null;
+            String[] selectionArgs = null;
+            String title = mContext.getString(R.string.ringtone_default);
+            // If restart Alarm,there is no permission to get the title from the uri.
+            // No matter in which database,the music has the same id.
+            // So we can only get the info of the music from other database by id in uri.
+            if (uri.getAuthority().equals(Utils.DOC_DOWNLOAD)) {
+                final String id = DocumentsContract.getDocumentId(uri);
+                uri = ContentUris.withAppendedId(
+                        Uri.parse(DOWNLOAD_CONTENT), Long.valueOf(id));
+            } else if (uri.getAuthority().equals(Utils.DOC_AUTHORITY)) {
+                final String docId = DocumentsContract.getDocumentId(uri);
+                final String[] split = docId.split(COLON);
+                uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+                selection = "_id=?";
+                selectionArgs = new String[] {
+                    split[ID_INDEX]
+                };
+            }
+            Cursor cursor = null;
+            try {
+                cursor = context.getContentResolver().query(uri,
+                        new String[] {
+                                MediaStore.Audio.Media.TITLE,
+                        }, selection, selectionArgs, null);
+                if (cursor != null && cursor.getCount() > 0) {
+                        cursor.moveToFirst();
+                    title = cursor.getString(0);
+                }
+            } catch (Exception e) {
+                LogUtils.e("Get ringtone uri Exception: e.toString=" + e.toString());
+            } finally {
+                if (cursor != null) {
+                    cursor.close();
                 }
             }
             return title;
