@@ -160,20 +160,22 @@ public class AlarmService extends Service {
 
         mCurrentAlarm = instance;
 
-        switch (mVolumeBehavior) {
-            case SettingsActivity.VOLUME_BEHAVIOR_SNOOZE:
-            case SettingsActivity.VOLUME_BEHAVIOR_DISMISS:
-                Intent fullScreenIntent = AlarmInstance.createIntent(this, AlarmActivity.class,
-                        instance.mId);
-                // set action, so we can be different then content pending intent
-                fullScreenIntent.setAction("fullscreen_activity");
-                fullScreenIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK |
-                        Intent.FLAG_ACTIVITY_NO_USER_ACTION);
-                startActivity(fullScreenIntent);
-                break;
-            default:
-                AlarmNotifications.showAlarmNotification(this, mCurrentAlarm);
-                break;
+        if(!AlarmActivity.mIsPowerOffAlarm) {
+            switch (mVolumeBehavior) {
+                case SettingsActivity.VOLUME_BEHAVIOR_SNOOZE:
+                case SettingsActivity.VOLUME_BEHAVIOR_DISMISS:
+                    Intent fullScreenIntent = AlarmInstance.createIntent(this, AlarmActivity.class,
+                            instance.mId);
+                    // set action, so we can be different then content pending intent
+                    fullScreenIntent.setAction("fullscreen_activity");
+                    fullScreenIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK |
+                            Intent.FLAG_ACTIVITY_NO_USER_ACTION);
+                    startActivity(fullScreenIntent);
+                    break;
+                default:
+                    AlarmNotifications.showAlarmNotification(this, mCurrentAlarm);
+                    break;
+            }
         }
 
         mInitialCallState = mTelephonyManager.getCallState();

@@ -37,7 +37,7 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.MANAGE_DOCUMENTS" />
     <uses-permission android:name="org.codeaurora.permission.POWER_ON_ALERT" />
-
+    <uses-permission android:name="android.permission.SHUTDOWN" />
     <application android:label="@string/app_label"
                  android:name=".DeskClockApplication"
                  android:allowBackup="true"
@@ -107,7 +107,13 @@
                 android:excludeFromRecents="true"
                 android:theme="@style/AlarmAlertFullScreenTheme"
                 android:windowSoftInputMode="stateAlwaysHidden"
-                android:showOnLockScreen="true" />
+                android:showOnLockScreen="true"
+                >
+            <intent-filter>
+                <action android:name="org.codeaurora.alarm.action.POWER_OFF_ALARM" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
 
         <activity android:name="ScreensaverActivity"
                 android:excludeFromRecents="true"
