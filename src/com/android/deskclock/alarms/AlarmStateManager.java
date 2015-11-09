@@ -17,6 +17,8 @@ package com.android.deskclock.alarms;
 
 import android.annotation.TargetApi;
 import android.app.AlarmManager;
+import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
@@ -32,6 +34,7 @@ import android.provider.Settings;
 import android.text.format.DateFormat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.widget.Toast;
+import android.telephony.TelephonyManager;
 
 import com.android.deskclock.AlarmAlertWakeLock;
 import com.android.deskclock.AlarmClockFragment;
@@ -883,6 +886,19 @@ public final class AlarmStateManager extends BroadcastReceiver {
                 }
             }
 
+            // If the phone is busy, keep the alarm snoozing.When the call is ended,
+            // the new coming alarm or the alarm which wakes from sooze,will skip the codes here
+            // and continue show the alarm as normal.
+            if (context.getResources().getBoolean(R.bool.config_delayalarm)) {
+                TelephonyManager mTelephonyManager = (TelephonyManager) context
+                        .getSystemService(Context.TELEPHONY_SERVICE);
+                if ((mTelephonyManager.getCallState() != TelephonyManager.CALL_STATE_IDLE)
+                        && (alarmState == AlarmInstance.FIRED_STATE)) {
+                    snooze(context, intent, instance);
+                    return;
+                }
+            }
+
             if (alarmState >= 0) {
                 setAlarmState(context, instance, alarmState);
             } else {
@@ -918,6 +934,39 @@ public final class AlarmStateManager extends BroadcastReceiver {
             context.startActivity(viewAlarmIntent);
             setDismissState(context, instance);
         }
+    }
+
+    /**
+     * Make the alarm snooze based on the snooze interval in settings.
+     * If the phone is not busy in call anymore, this method will not be
+     * called, and the alarm will wake up based on snooze interval.
+     */
+    private void snooze(Context context, Intent intent, AlarmInstance instance) {
+        Uri uri = intent.getData();
+        AlarmInstance newInstance = AlarmInstance.getInstance(context.getContentResolver(),
+                AlarmInstance.getId(uri));
+        if (newInstance == null) {
+            // If AlarmInstance is turn to null,return.
+            return;
+        }
+
+        // Notify the user that the alarm has been snoozed.
+        Intent cancelSnooze = createStateChangeIntent(context, ALARM_MANAGER_TAG, newInstance,
+                AlarmInstance.DISMISSED_STATE);
+        PendingIntent broadcast = PendingIntent.getBroadcast(context, instance.hashCode(),
+                cancelSnooze, 0);
+        String label = newInstance.getLabelOrDefault(context);
+        label = context.getString(R.string.alarm_notify_snooze_label, label);
+        NotificationManager nm = (NotificationManager) context
+                .getSystemService(Context.NOTIFICATION_SERVICE);
+        Notification n = new Notification(R.drawable.stat_notify_alarm, label, 0);
+        n.setLatestEventInfo(context, label,
+                context.getString(R.string.alarm_notify_snooze_text,
+                        AlarmUtils.getFormattedTime(context, instance.getAlarmTime())),
+                broadcast);
+        n.flags |= Notification.FLAG_AUTO_CANCEL | Notification.FLAG_ONGOING_EVENT;
+        nm.notify(instance.hashCode(), n);
+        setAlarmState(context, instance, AlarmInstance.SNOOZE_STATE);
     }
 
     /**
