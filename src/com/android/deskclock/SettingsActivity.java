@@ -19,6 +19,7 @@ package com.android.deskclock;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.media.AudioManager;
 import android.os.Bundle;
@@ -35,6 +36,7 @@ import com.android.deskclock.worldclock.Cities;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.TimeZone;
 
 /**
@@ -55,12 +57,15 @@ public class SettingsActivity extends BaseActivity {
     public static final String DEFAULT_VOLUME_BEHAVIOR = "0";
     public static final String VOLUME_BEHAVIOR_SNOOZE = "1";
     public static final String VOLUME_BEHAVIOR_DISMISS = "2";
+    private static Locale mLocale;
+    private static Context mContext;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setVolumeControlStream(AudioManager.STREAM_ALARM);
         setContentView(R.layout.settings);
+        mContext = this;
     }
 
     @Override
@@ -99,7 +104,7 @@ public class SettingsActivity extends BaseActivity {
 
             // We don't want to reconstruct the timezone list every single time onResume() is
             // called so we do it once in onCreate
-            if (mTimezones == null) {
+            if (mTimezones == null || isLocaleChanged()) {
                 mTime = System.currentTimeMillis();
                 mTimezones = getAllTimezones();
             }
@@ -218,7 +223,13 @@ public class SettingsActivity extends BaseActivity {
             autoHomeClockPref.setOnPreferenceChangeListener(this);
 
             final ListPreference homeTimezonePref = (ListPreference) findPreference(KEY_HOME_TZ);
+            if (mTimezones == null || isLocaleChanged()) {
+                mTime = System.currentTimeMillis();
+                mTimezones = getAllTimezones();
+            }
             homeTimezonePref.setEnabled(autoHomeClockEnabled);
+            homeTimezonePref.setEntryValues(mTimezones[0]);
+            homeTimezonePref.setEntries(mTimezones[1]);
             homeTimezonePref.setSummary(homeTimezonePref.getEntry());
             homeTimezonePref.setOnPreferenceChangeListener(this);
 
@@ -302,5 +313,21 @@ public class SettingsActivity extends BaseActivity {
                 return name.toString();
             }
         }
+    }
+
+    private static boolean isLocaleChanged() {
+        if(mContext == null)
+            return false;
+        Resources resource = mContext.getResources();
+        if ( resource != null ) {
+            Configuration config = resource.getConfiguration();
+            if ( config != null ) {
+                if ( mLocale == config.locale ) {
+                    return false;
+                }
+                mLocale = config.locale;
+            }
+        }
+        return true;
     }
 }
