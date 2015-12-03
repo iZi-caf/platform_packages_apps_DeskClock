@@ -35,6 +35,7 @@
     <!-- READ_EXTERNAL_STORAGE is required to play custom ringtones from the SD card prior to M -->
     <!-- It is also required to display user-friendly names for custom ringtones in the UI. -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="org.codeaurora.permission.POWER_ON_ALERT" />
 
     <application android:label="@string/app_label"
                  android:name=".DeskClockApplication"
