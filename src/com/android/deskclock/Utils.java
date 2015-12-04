@@ -829,6 +829,13 @@ public class Utils {
         return context.getResources().getQuantityString(id, quantity, localizedQuantity);
     }
 
+    public static String getTitleColumnNameForUri(Uri uri) {
+        if (DOC_EXTERNAL.equals(uri.getAuthority())) {
+            return Document.COLUMN_DISPLAY_NAME;
+        }
+        return MediaStore.Audio.Media.TITLE;
+    }
+
     public static boolean isRingToneUriValid(Context context, Uri uri) {
         if (uri.equals(Alarm.NO_RINGTONE_URI)) {
             return true;
@@ -841,7 +848,7 @@ public class Utils {
             Cursor cursor = null;
             try {
                 cursor = context.getContentResolver().query(uri,
-                        new String[] {MediaStore.Audio.Media.TITLE}, null, null, null);
+                        new String[] {getTitleColumnNameForUri(uri)}, null, null, null);
                 if (cursor != null && cursor.getCount() > 0) {
                     return true;
                 }

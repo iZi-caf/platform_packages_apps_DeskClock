@@ -1251,7 +1251,7 @@ public abstract class AlarmClockFragment extends DeskClockFragment implements
             try {
                 cursor = context.getContentResolver().query(uri,
                         new String[] {
-                                MediaStore.Audio.Media.TITLE,
+                                Utils.getTitleColumnNameForUri(uri),
                         }, selection, selectionArgs, null);
                 if (cursor != null && cursor.getCount() > 0) {
                         cursor.moveToFirst();
