@@ -21,6 +21,7 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.TimeInterpolator;
 import android.app.AlarmManager;
+import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -28,6 +29,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
+import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
@@ -37,7 +39,10 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.os.SystemClock;
+import android.os.SystemProperties;
 import android.preference.PreferenceManager;
+import android.provider.DocumentsContract.Document;
+import android.provider.MediaStore;
 import android.provider.Settings;
 import android.text.Spannable;
 import android.text.SpannableString;
@@ -57,11 +62,13 @@ import android.widget.TextView;
 
 import com.android.deskclock.provider.AlarmInstance;
 import com.android.deskclock.provider.DaysOfWeek;
+import com.android.deskclock.provider.Alarm;
 import com.android.deskclock.stopwatch.Stopwatches;
 import com.android.deskclock.timer.Timers;
 import com.android.deskclock.worldclock.CityObj;
 
 import java.text.NumberFormat;
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -74,6 +81,7 @@ import java.util.TimeZone;
 
 public class Utils {
     private final static String PARAM_LANGUAGE_CODE = "hl";
+    private final static String PROP_ALARM = "ro.config.alarm_alert";
 
     /**
      * Help URL query parameter key for the app version.
@@ -96,6 +104,11 @@ public class Utils {
     public static final int DEFAULT_WEEK_START = Calendar.getInstance().getFirstDayOfWeek();
 
     private static Locale sLocaleUsedForWeekdays;
+
+    /** Content provider paths that could be passed back from documents ui **/
+    public static final String DOC_AUTHORITY = "com.android.providers.media.documents";
+    public static final String DOC_DOWNLOAD = "com.android.providers.downloads.documents";
+    public static final String DOC_EXTERNAL = "com.android.externalstorage.documents";
 
     /** Types that may be used for clock displays. **/
     public static final String CLOCK_TYPE_DIGITAL = "digital";
@@ -814,5 +827,72 @@ public class Utils {
     public static String getNumberFormattedQuantityString(Context context, int id, int quantity) {
         final String localizedQuantity = NumberFormat.getInstance().format(quantity);
         return context.getResources().getQuantityString(id, quantity, localizedQuantity);
+    }
+
+    public static String getTitleColumnNameForUri(Uri uri) {
+        if (DOC_EXTERNAL.equals(uri.getAuthority())) {
+            return Document.COLUMN_DISPLAY_NAME;
+        }
+        return MediaStore.Audio.Media.TITLE;
+    }
+
+    public static boolean isRingToneUriValid(Context context, Uri uri) {
+        if (uri.equals(Alarm.NO_RINGTONE_URI)) {
+            return true;
+        } else if (uri.getScheme().contentEquals("file")) {
+            File f = new File(uri.getPath());
+            if (f.exists()) {
+                return true;
+            }
+        } else if (uri.getScheme().contentEquals("content")) {
+            Cursor cursor = null;
+            try {
+                cursor = context.getContentResolver().query(uri,
+                        new String[] {getTitleColumnNameForUri(uri)}, null, null, null);
+                if (cursor != null && cursor.getCount() > 0) {
+                    return true;
+                }
+            } catch (Exception e) {
+                LogUtils.e("Get ringtone uri Exception: e.toString=" + e.toString());
+            } finally {
+                if (cursor != null) {
+                    cursor.close();
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public static Uri getSystemDefaultAlarm(Context c) {
+        String defaultAlarm = SystemProperties.get(PROP_ALARM, null);
+        if (defaultAlarm == null) {
+            defaultAlarm = ""; //If system prop isn't set return any alarm
+        }
+
+        // The system property is a file name so we query the Data field to find the alarm
+        Cursor cursor = null;
+        try {
+            cursor = c.getContentResolver().query(
+                    MediaStore.Audio.Media.INTERNAL_CONTENT_URI,
+                    new String[] { MediaStore.Audio.Media._ID},
+                    MediaStore.Audio.Media.DATA + " LIKE ? AND "
+                        + MediaStore.Audio.Media.ALBUM + " = 'alarms'",
+                    new String[] {"%" + defaultAlarm},
+                    null);
+
+            if (cursor != null && cursor.getCount() > 0 && cursor.moveToFirst()) {
+                long id = cursor.getLong(cursor.getColumnIndex(MediaStore.Audio.Media._ID));
+                return ContentUris.withAppendedId(MediaStore.Audio.Media.INTERNAL_CONTENT_URI, id);
+            }
+        } catch (Exception e) {
+            LogUtils.e("Cannot find default alarm ringtone: " + e.toString());
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+
+        return Alarm.NO_RINGTONE_URI;
     }
 }

@@ -200,10 +200,26 @@ public class AsyncRingtonePlayer {
             }
 
             Uri alarmNoise = ringtoneUri;
-            // Fall back to the default alarm if the database does not have an alarm stored.
+            // Fall back on the default alarm if the database does not have an
+            // alarm stored.
             if (alarmNoise == null) {
-                alarmNoise = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+                // Try to get the actual default first, this will be the one set by the user
+                alarmNoise = RingtoneManager.getActualDefaultRingtoneUri(context,
+                        RingtoneManager.TYPE_ALARM);
+                // if the actual default is null, fallback to the system default.
+                if (alarmNoise == null) {
+                    alarmNoise = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+                }
                 LogUtils.v("Using default alarm: " + alarmNoise.toString());
+            } else if (!Utils.isRingToneUriValid(context, alarmNoise)) {
+                alarmNoise = RingtoneManager.getActualDefaultRingtoneUri(context,
+                        RingtoneManager.TYPE_ALARM);
+
+                // Verify that the default Uri is actually valid, if not get system default
+                if (!Utils.isRingToneUriValid(context, alarmNoise)) {
+                    alarmNoise = Utils.getSystemDefaultAlarm(context);
+                }
+
             }
 
             mMediaPlayer = new MediaPlayer();
@@ -343,7 +359,27 @@ public class AsyncRingtonePlayer {
             if (mAudioManager == null) {
                 mAudioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
             }
+            // Fall back on the default alarm if the database does not have an
+            // alarm stored.
+            if (ringtoneUri == null) {
+                // Try to get the actual default first, this will be the one set by the user
+                ringtoneUri = RingtoneManager.getActualDefaultRingtoneUri(context,
+                        RingtoneManager.TYPE_ALARM);
+                // if the actual default is null, fallback to the system default.
+                if (ringtoneUri == null) {
+                    ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+                }
+                LogUtils.v("Using default alarm: " + ringtoneUri.toString());
+            } else if (!Utils.isRingToneUriValid(context, ringtoneUri)) {
+                ringtoneUri = RingtoneManager.getActualDefaultRingtoneUri(context,
+                        RingtoneManager.TYPE_ALARM);
 
+                // Verify that the default Uri is actually valid, if not get system default
+                if (!Utils.isRingToneUriValid(context, ringtoneUri)) {
+                    ringtoneUri = Utils.getSystemDefaultAlarm(context);
+                }
+
+            }
             final boolean inTelephoneCall = isInTelephoneCall(context);
             if (inTelephoneCall) {
                 ringtoneUri = getInCallRingtoneUri(context);

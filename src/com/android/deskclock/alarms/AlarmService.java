@@ -24,14 +24,17 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.os.Binder;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
 
 import com.android.deskclock.AlarmAlertWakeLock;
 import com.android.deskclock.LogUtils;
 import com.android.deskclock.R;
+import com.android.deskclock.SettingsActivity;
 import com.android.deskclock.events.Events;
 import com.android.deskclock.provider.AlarmInstance;
 
@@ -88,6 +91,7 @@ public class AlarmService extends Service {
         mIsBound = false;
         return super.onUnbind(intent);
     }
+    private String mVolumeBehavior;
 
     /**
      * Utility method to help start alarm properly. If alarm is already firing, it
@@ -138,6 +142,7 @@ public class AlarmService extends Service {
             } else if (state != TelephonyManager.CALL_STATE_IDLE && state != mInitialCallState) {
                 sendBroadcast(AlarmStateManager.createStateChangeIntent(AlarmService.this,
                         "AlarmService", mCurrentAlarm, AlarmInstance.MISSED_STATE));
+                stopCurrentAlarm();
             }
         }
     };
@@ -154,7 +159,23 @@ public class AlarmService extends Service {
         Events.sendEvent(R.string.category_alarm, R.string.action_fire, 0);
 
         mCurrentAlarm = instance;
-        AlarmNotifications.showAlarmNotification(this, mCurrentAlarm);
+
+        switch (mVolumeBehavior) {
+            case SettingsActivity.VOLUME_BEHAVIOR_SNOOZE:
+            case SettingsActivity.VOLUME_BEHAVIOR_DISMISS:
+                Intent fullScreenIntent = AlarmInstance.createIntent(this, AlarmActivity.class,
+                        instance.mId);
+                // set action, so we can be different then content pending intent
+                fullScreenIntent.setAction("fullscreen_activity");
+                fullScreenIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK |
+                        Intent.FLAG_ACTIVITY_NO_USER_ACTION);
+                startActivity(fullScreenIntent);
+                break;
+            default:
+                AlarmNotifications.showAlarmNotification(this, mCurrentAlarm);
+                break;
+        }
+
         mInitialCallState = mTelephonyManager.getCallState();
         mTelephonyManager.listen(mPhoneStateListener, PhoneStateListener.LISTEN_CALL_STATE);
         AlarmKlaxon.start(this, mCurrentAlarm);
@@ -218,6 +239,9 @@ public class AlarmService extends Service {
         filter.addAction(ALARM_DISMISS_ACTION);
         registerReceiver(mActionsReceiver, filter);
         mIsRegistered = true;
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        mVolumeBehavior = prefs.getString(SettingsActivity.KEY_VOLUME_BEHAVIOR,
+                SettingsActivity.DEFAULT_VOLUME_BEHAVIOR);
     }
 
     @Override
