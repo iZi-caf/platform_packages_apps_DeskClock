@@ -74,7 +74,8 @@ public final class AlarmInstance implements ClockContract.InstancesColumns {
             VIBRATE,
             RINGTONE,
             ALARM_ID,
-            ALARM_STATE
+            ALARM_STATE,
+            INCREASING_VOLUME,
     };
 
     /**
@@ -92,6 +93,7 @@ public final class AlarmInstance implements ClockContract.InstancesColumns {
     private static final int RINGTONE_INDEX = 8;
     private static final int ALARM_ID_INDEX = 9;
     private static final int ALARM_STATE_INDEX = 10;
+    private static final int INCREASING_VOLUME_INDEX = 11;
 
     private static final int COLUMN_COUNT = ALARM_STATE_INDEX + 1;
 
@@ -108,6 +110,7 @@ public final class AlarmInstance implements ClockContract.InstancesColumns {
         values.put(MINUTES, instance.mMinute);
         values.put(LABEL, instance.mLabel);
         values.put(VIBRATE, instance.mVibrate ? 1 : 0);
+        values.put(INCREASING_VOLUME, instance.mIncreasingVolume ? 1 : 0);
         if (instance.mRingtone == null) {
             // We want to put null in the database, so we'll be able
             // to pick up on changes to the default alarm
@@ -336,6 +339,7 @@ public final class AlarmInstance implements ClockContract.InstancesColumns {
     public Uri mRingtone;
     public Long mAlarmId;
     public int mAlarmState;
+    public boolean mIncreasingVolume;
 
     public AlarmInstance(Calendar calendar, Long alarmId) {
         this(calendar);
@@ -347,6 +351,7 @@ public final class AlarmInstance implements ClockContract.InstancesColumns {
         setAlarmTime(calendar);
         mLabel = "";
         mVibrate = false;
+        mIncreasingVolume = false;
         mRingtone = null;
         mAlarmState = SILENT_STATE;
     }
@@ -360,6 +365,7 @@ public final class AlarmInstance implements ClockContract.InstancesColumns {
         mMinute = c.getInt(MINUTES_INDEX);
         mLabel = c.getString(LABEL_INDEX);
         mVibrate = c.getInt(VIBRATE_INDEX) == 1;
+        mIncreasingVolume = c.getInt(INCREASING_VOLUME_INDEX) == 1;
         if (c.isNull(RINGTONE_INDEX)) {
             // Should we be saving this with the current ringtone or leave it null
             // so it changes when user changes default ringtone?
@@ -488,6 +494,7 @@ public final class AlarmInstance implements ClockContract.InstancesColumns {
                 ", mRingtone=" + mRingtone +
                 ", mAlarmId=" + mAlarmId +
                 ", mAlarmState=" + mAlarmState +
+                ", mIncreasingVolume=" + mIncreasingVolume +
                 '}';
     }
 }
