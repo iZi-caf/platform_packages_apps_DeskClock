@@ -171,7 +171,6 @@
   <!-- Repeat options that appear under an alarm on main Alarm Clock
          screen to identify repetition schedule: concatenate days with
          this character, i.e. "Mon, Tue, Wed" -->
-  <string name="day_concat">", "</string>
   <!-- Appears at the top of the Clock Picker screen: Tell user to
          select a clock to display -->
   <string name="clock_instructions">Escolha um relógio</string>
@@ -207,7 +206,6 @@
   </plurals>
   <!-- Auto silence summary when turned off -->
   <string name="auto_silence_never">Nunca</string>
-  <string name="default_auto_silence_value">10</string>
   <!-- Entries listed in the ListPreference when invoking the auto silence
          preference. -->
   <string-array name="auto_silence_entries">
@@ -330,16 +328,12 @@
          Also used as title for chooser when sharing stopwatch results. -->
   <string name="sw_share_button">Partilhar</string>
   <!-- Abbreviation for temporal hours [CHAR LIMIT=1] -->
-  <string name="hours_label">h</string>
   <!-- Abbreviation for temporal minutes [CHAR LIMIT=1] -->
-  <string name="minutes_label">m</string>
   <!-- Abbreviation for temporal seconds [CHAR LIMIT=1] -->
-  <string name="seconds_label">s</string>
   <!-- Accessibility strings -->
   <string name="hours_label_description">horas</string>
   <string name="minutes_label_description">minutos</string>
   <string name="seconds_label_description">segundos</string>
-  <string name="zero">0</string>
   <!--  Stopwatch share strings -->
   <!-- Sentence within the message created to share the total time recorded within the stopwatch -->
   <string name="sw_share_main">O meu tempo é <xliff:g id="TIME">%s</xliff:g></string>
@@ -442,13 +436,9 @@
   <string name="time_picker_cancel">Cancelar</string>
   <!-- Textual content of the button to update an alarm with the current dialog values -->
   <string name="time_picker_set">Ok</string>
-  <string name="time_picker_time_seperator">:</string>
   <!--  place holder for am/pm label when it is not set -->
-  <string name="time_picker_ampm_label">--</string>
   <!-- add 00 as minutes to the time when pressing this button -->
-  <string name="time_picker_00_label">:00</string>
   <!-- add 30 as minutes to the time when pressing this button -->
-  <string name="time_picker_30_label">:30</string>
   <!-- Choices for timezones, must be kept in sync with timezone_values. CHAR LIMIT=25] -->
   <string-array name="timezone_labels">
     <item>"Ilhas Marshall"</item>
@@ -632,14 +622,12 @@
         a represents am/pm
         Ex: h:mm a = 12:54 am, 8:05 pm
     -->
-  <string name="time_format_12_mode">h:mm a</string>
   <!--
         String that represents time format for 24-hour time.
         k represents hour in range (0-23) with the minimum number of digits
         mm represents minute with leading 0 in case of values < 10
         Ex: k:mm = 13:51, 5:05
     -->
-  <string name="time_format_24_mode">k:mm</string>
   <!--
         String that represents weekday, time format for 12-hour time.
         EEE represents weekday name in short form (ex. Mon, Tue, Wed)
@@ -648,7 +636,6 @@
         a represents am/pm
         Ex: EEE, h:mm a = Mon, 2:55 pm
     -->
-  <string name="weekday_time_format_12_mode">EEE, h:mm a</string>
   <!--
         String that represents weekday, time format for 24-hour time.
         EEE represents weekday name in short form (ex. Mon, Tue, Wed)
@@ -656,7 +643,6 @@
         mm represents minute with leading 0 in case of values < 10
         Ex: EEE, k:mm = Mon, 2:55
     -->
-  <string name="weekday_time_format_24_mode">EEE, k:mm</string>
   <!-- String that represents that invalid time for an alarm was specified, e.g. 23:00am
      or 27:68pm.
     First %d represents hour, second %d represents minutes, %s represents am/pm,
