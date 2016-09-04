@@ -206,6 +206,7 @@
   </plurals>
   <!-- Auto silence summary when turned off -->
   <string name="auto_silence_never">Ποτέ</string>
+  <string name="default_auto_silence_value">10</string>
   <!-- Entries listed in the ListPreference when invoking the auto silence
          preference. -->
   <string-array name="auto_silence_entries">
@@ -284,6 +285,7 @@
   <!-- Label on the main screen control used to set alarm [CHAR LIMIT=30]-->
   <string name="control_set_alarm">Ορισμός ξυπνητηριού</string>
   <!-- Label on the main screen control used to set alarm when there is already an existing alarm [CHAR LIMIT=30]-->
+  <string name="control_set_alarm_with_existing"><xliff:g id="time">%s </xliff:g></string>
   <!--  ActionBar strings -->
   <!-- Describes the purpose of the tab button which which switches the activity to the Alarm page -->
   <string name="menu_alarm">Ξυπνητήρι</string>
@@ -336,6 +338,7 @@
   <string name="hours_label_description">ώρες</string>
   <string name="minutes_label_description">λεπτά</string>
   <string name="seconds_label_description">δευτερόλεπτα</string>
+  <string name="zero">0</string>
   <!--  Stopwatch share strings -->
   <!-- Sentence within the message created to share the total time recorded within the stopwatch -->
   <string name="sw_share_main">Ο χρόνος μου είναι <xliff:g id="TIME">%s</xliff:g></string>
@@ -437,9 +440,14 @@
   <!-- Textual content of the button to discard the current dialog values and close the dialog -->
   <string name="time_picker_cancel">Ακύρωση</string>
   <!-- Textual content of the button to update an alarm with the current dialog values -->
+  <string name="time_picker_set">ΟΚ</string>
+  <string name="time_picker_time_seperator">:</string>
   <!--  place holder for am/pm label when it is not set -->
+  <string name="time_picker_ampm_label">--</string>
   <!-- add 00 as minutes to the time when pressing this button -->
+  <string name="time_picker_00_label">:00</string>
   <!-- add 30 as minutes to the time when pressing this button -->
+  <string name="time_picker_30_label">:30</string>
   <!-- Choices for timezones, must be kept in sync with timezone_values. CHAR LIMIT=25] -->
   <string-array name="timezone_labels">
     <item>"Νήσοι Μάρσαλ"</item>
@@ -573,10 +581,15 @@
   <!-- Toast content when an alarm was deleted  -->
   <string name="alarm_deleted">Ξυπν/ρι διαγράφ.</string>
   <!-- Select the source of the alarm -->
+  <string name="alarm_select">Επιλογή ξυπνητηριού</string>
   <!-- Select the ringtone as alarm -->
+  <string name="alarm_select_ringtone">Ήχος κλήσης ξυπνητηριού</string>
   <!-- Select the alarm from external device -->
+  <string name="alarm_select_external">Μουσική</string>
   <!-- Ok for selection -->
+  <string name="alarm_select_ok">ΟΚ</string>
   <!-- Cancel for selection -->
+  <string name="alarm_select_cancel">Ακύρωση</string>
   <!-- slash between date and next alarm in the clock -->
   <string name="slash">/</string>
   <!-- slash between date and next alarm in the clock -->
@@ -828,4 +841,8 @@
     -->
   <string name="alarm_is_snoozed">Έγινε αναβολή του ξυπνητηριού <xliff:g id="ALARM_TIME">%s</xliff:g> για 10 λεπτά</string>
   <!-- Ringtone selection default" -->
+  <string name="ringtone_default">"Προεπιλεγμένος ήχος"</string>
+  <string name="power_on_text">Ενεργοποίηση</string>
+  <string name="power_on_yes_text">Ναι</string>
+  <string name="power_on_no_text">\'Οχι</string>
 </resources>
